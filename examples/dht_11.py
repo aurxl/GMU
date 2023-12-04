@@ -7,7 +7,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.cleanup()
 
 # read data using pin 14
-instance = sensors.DHT11(pin = 4)
+instance = dht11.DHT11(pin = 4)
 result = instance.read()
 
 while not result.is_valid():  # read until valid values

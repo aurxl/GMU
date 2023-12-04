@@ -36,7 +36,7 @@ ren.
     - Sensor: DHT11 (selber wie bei der Temperaturmessung)
     - Anzeige: 7-Segment-LED-Anzeige
         - Ausgabe Temperaturwerte in "sinvoller Genauigkeit"
-- Erwieterung des PAP/ Struktogramms und des Python-Skripts
+- Erweiterung des PAP/ Struktogramms und des Python-Skripts
 - ZIP Datei mit folgenden Inhalten anfertigen (due: Freitag 23:59Uhr der Projektwoche)
     - Dokumentation, mit folgenden Anlagen:
         - Python-Skript

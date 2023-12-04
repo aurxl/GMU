@@ -23,13 +23,15 @@ class sensor:
             result = self.instance.read()
             if result.is_valid():
                 break
+            else:
+                return False
 
         self.temp = result.temperature
         self.hum = result.humidity
         return True
 
     def humidity(self) -> float:
-        return float(self.temp)
+        return float(self.hum)
 
     def temperature(self) -> float:
-        return float(self.hum)
+        return float(self.temp)
