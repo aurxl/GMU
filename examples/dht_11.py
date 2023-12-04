@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-import sensors
+import dht11
 
 # initialize GPIO
 GPIO.setwarnings(False)
