@@ -78,6 +78,7 @@ class out_segment():
             2: 0,
             3: 0
         }
+        self.shown_type = None
         self.colon = False
         
         self.segment.fill(0)
