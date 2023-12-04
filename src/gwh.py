@@ -1,14 +1,17 @@
 #!/bin/env python
-#from sensors import sensor
-#from output import out_lcd, out_segment
+from sensors import sensor
+from output import out_lcd, out_segment
 import argparse
 import time
 
+
 DESCRIPTION = ""
-EXAMPLE = ""
+EXAMPLE = "gwh.py --hum --temp --lcd --segment -u 2 -l"
 PROG = "python3 gwh.py"
 
+
 def parse_args():
+    """initialize argparse and setting some args"""
     parser = argparse.ArgumentParser(
         prog = PROG,
         description=DESCRIPTION,
@@ -27,13 +30,13 @@ def parse_args():
 
 
 def main(env_sensor = False, lcd = False, segment = False, hum = False, temp = False) -> None:
+    """main func merging all the parts together"""
     hum_str = ""
     temp_str = ""
     line_break = ""
 
     try:
         if env_sensor: env_sensor.update(5)
-        print("_")
         if hum: hum_str = f"Temp: {env_sensor.humidity()}C"
         if temp: temp_str = f"Hum :{env_sensor.temperature()}%"
         if hum and temp: line_break = "\n"
@@ -48,6 +51,7 @@ def main(env_sensor = False, lcd = False, segment = False, hum = False, temp = F
                 segment.shown_type = "temp"
 
     except KeyboardInterrupt:
+        # stop program nicely when Keyboard interrupts (^C)
         print("stopping ... ")
         if lcd: lcd.stop()
         if segment: segment.stop()
@@ -55,14 +59,17 @@ def main(env_sensor = False, lcd = False, segment = False, hum = False, temp = F
 
 
 if __name__ == "__main__":
+    # init args
     args = parse_args()
+
+    # define some default vars
     iterations = 1
-    env_sensor = False
+    update_time = 1
     lcd = False
     segment = False
-    update_time = 1
+    env_sensor = False
 
-    """checking user args and setting options"""
+    # checking user args and setting options
     if args.ITER:
         iterations = int(args.ITER)
 
@@ -82,6 +89,11 @@ if __name__ == "__main__":
         update_time = float(args.UPDATETIME)
 
     try:
+        """
+        when user wants to run the program forever (--loop)
+        start while loop otherwise iterate for given (--iteration)
+        number
+        """
         if args.LOOP:
             while True:
                 main(env_sensor=env_sensor, lcd=lcd, segment=segment)
@@ -92,6 +104,7 @@ if __name__ == "__main__":
                 time.sleep(update_time)
 
     except KeyboardInterrupt:
+        # stop program nicely when Keyboard interrupts (^C)
         print("stopping ... ")
         if lcd: lcd.stop()
         if segment: segment.stop()

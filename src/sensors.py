@@ -5,6 +5,10 @@ import time
 
 
 class sensor:
+    """
+    sensor class defining dht11 sensor
+    and holding current values
+    """
     def __init__(self, pin: int = 4):
         self.pin = pin
         self.temp = 0.0
@@ -16,6 +20,11 @@ class sensor:
         GPIO.cleanup()
 
     def update(self, timeout: int = 2) -> bool:
+        """func for 'pulling'/ updating the current values
+        
+        Timeout defines the max time in sec. to wait for
+        valid values from the dht11 sensor.
+        """
         result = self.instance.read()
         timeout = time.time() + timeout
 
@@ -31,7 +40,9 @@ class sensor:
         return True
 
     def humidity(self) -> float:
+        """return class holded humidity value"""
         return float(self.hum)
 
     def temperature(self) -> float:
+        """return class holded temperature value"""
         return float(self.temp)
