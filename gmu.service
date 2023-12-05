@@ -1,0 +1,11 @@
+[Unit]
+Description="Greenhouse Monitoring Utility"
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+ExecStart=python3 /opt/gmu/gmu.py -LHtls -u 2
+
+[Install]
+WantedBy=multi-user.target

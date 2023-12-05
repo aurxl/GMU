@@ -99,19 +99,20 @@ class out_segment():
          2  0.  5      <- number
         """
         written_chars = ""
-        dot_controll = 0
+        dot_control = 0
 
         for i, c in enumerate(chars):
-            ii = i  - dot_controll
+            ii = i  - dot_control
             try:
                 if c == "." or c == ",":
-                    self.segment[ii - 1] = c
-                    dot_controll += 1
+                    self.segment[ii - 1] = "."
+                    dot_control += 1
                 else:
                     self.segment[ii] = c
                 written_chars += c
                 self.segment.show()
-            except:
+            except Exception as exc:
+                print(exc)
                 return written_chars, False
         return written_chars, True
 

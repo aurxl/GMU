@@ -6,7 +6,7 @@ import time
 
 
 DESCRIPTION = ""
-EXAMPLE = "gwh.py --hum --temp --lcd --segment -u 2 -l"
+EXAMPLE = "gmu.py --hum --temp --lcd --segment -u 2 -l"
 PROG = "python3 gwh.py"
 
 
@@ -18,9 +18,9 @@ def parse_args():
         epilog=EXAMPLE,
         formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument('-l', '--loop', help="running forever", dest='LOOP', action='store_true')
+    parser.add_argument('-L', '--loop', help="running forever", dest='LOOP', action='store_true')
     parser.add_argument('-i', '--iterations', help=" (int)", dest='ITER',)
-    parser.add_argument('-L', '--lcd', help="output to LCD Monitor", dest='LCD', action='store_true')
+    parser.add_argument('-l', '--lcd', help="output to LCD Monitor", dest='LCD', action='store_true')
     parser.add_argument('-s', '--segment', help="output to the 7-Segment Display", dest='SEGMENT', action='store_true')
     parser.add_argument('-H', '--hum', help="check hum level", dest='HUM', action='store_true')
     parser.add_argument('-t', '--temp', help="check temp level", dest='TEMP', action='store_true')
@@ -37,16 +37,17 @@ def main(env_sensor = False, lcd = False, segment = False, hum = False, temp = F
 
     try:
         if env_sensor: env_sensor.update(5)
-        if hum: hum_str = f"Temp: {env_sensor.humidity()}C"
-        if temp: temp_str = f"Hum :{env_sensor.temperature()}%"
+        if hum: hum_str = f"Hum :{env_sensor.humidity()}%"
+        if temp: temp_str = f"Temp:{env_sensor.temperature()}C"
         if hum and temp: line_break = "\n"
 
-        if lcd: lcd.msg(hum_str + line_break + temp_str)
+        if lcd: lcd.msg(f"{hum_str}{line_break}{temp_str}")
+
         if segment:
-            if hum and segment.type != "hum":
-                segment.show(f"{env_sensor.temperature()}")
+            if hum and segment.shown_type != "hum":
+                segment.show(f"{env_sensor.humidity()}")
                 segment.shown_type = "hum"
-            else:
+            elif temp and segment.shown_type != "temp":
                 segment.show(f"{env_sensor.temperature()}")
                 segment.shown_type = "temp"
 
@@ -94,13 +95,14 @@ if __name__ == "__main__":
         start while loop otherwise iterate for given (--iteration)
         number
         """
+        print("starting GMU!")
         if args.LOOP:
             while True:
-                main(env_sensor=env_sensor, lcd=lcd, segment=segment)
+                main(env_sensor=env_sensor, lcd=lcd, segment=segment, hum=args.HUM, temp=args.TEMP)
                 time.sleep(update_time)
         else:
             for _ in range(iterations):
-                main(env_sensor=env_sensor, lcd=lcd, segment=segment)
+                main(env_sensor=env_sensor, lcd=lcd, segment=segment, hum=args.HUM, temp=args.TEMP)
                 time.sleep(update_time)
 
     except KeyboardInterrupt:
