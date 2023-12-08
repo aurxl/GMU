@@ -1,12 +1,16 @@
 #!/bin/env python
+import time
+import threading
+from enum import unique, Enum
 import board
 import busio
 import adafruit_character_lcd.character_lcd_i2c as c_lcd
 from adafruit_ht16k33.segments import Seg7x4
-import time
+from luma.led_matrix.device import max7219
+from luma.core.interface.serial import spi, noop
+from luma.core.render import canvas
 
-
-class out_lcd():
+class Lcd():
     """class defining the lcd display"""
     def __init__(self):
         self.text = "hier könnte ihre Werbung stehen"
@@ -72,7 +76,7 @@ class out_lcd():
         except Exception as exc:
             return False, exc
 
-class out_segment():
+class Segment():
     """class defining the 7-Segment Display"""
     def __init__(self):
         # self.segment = SevenSegment.SevenSegment(address=0x70)
@@ -123,3 +127,174 @@ class out_segment():
             return True
         except Exception:
             return False
+
+
+@unique
+class Status8x8(Enum):
+    SMILEYGOOD = [
+        [1,1,0,0,0,0,1,1],
+        [1,0,1,1,1,1,0,1],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,0,0,1,1,0],
+        [1,0,1,1,1,1,0,1],
+        [1,1,0,0,0,0,1,1]
+    ]
+    SMILEYBAD = [
+        [1,1,0,0,0,0,1,1],
+        [1,0,1,1,1,1,0,1],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,0,0,1,1,0],
+        [1,0,0,1,1,0,0,1],
+        [1,1,0,0,0,0,1,1]
+    ]
+    SMILEYMID = [
+        [1,1,0,0,0,0,1,1],
+        [1,0,1,1,1,1,0,1],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,0,0,0,0,1,0],
+        [1,0,1,1,1,1,0,1],
+        [1,1,0,0,0,0,1,1]
+    ]
+    MCGOOD = [
+        [0,0,0,0,0,0,0,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,1,1,0,1,0],
+        [0,1,1,0,0,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,0,0,0,0,0,0,0]
+    ]
+    MCBAD = [
+        [1,1,0,0,0,0,1,1],
+        [1,1,1,1,1,1,0,1],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,0,0,1,1,0],
+        [1,0,0,1,1,0,0,1],
+        [1,1,0,0,0,0,1,1]
+    ]
+    MCMID = [
+        [1,1,0,0,0,0,1,1],
+        [1,1,1,1,1,1,0,1],
+        [0,1,0,1,1,0,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,0],
+        [0,1,0,0,0,0,1,0],
+        [1,0,1,1,1,1,0,1],
+        [1,1,0,0,0,0,1,1]
+    ]
+    GOOD = [
+        [1,1,1,1,1,1,1,1],
+        [1,0,0,1,1,0,0,1],
+        [1,0,0,1,1,0,0,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,0,1,1,0,1,1],
+        [1,1,1,0,0,1,1,1],
+        [1,1,1,1,1,1,1,1]
+    ]
+    BAD = [
+        [1,1,1,1,1,1,1,1],
+        [1,0,0,1,1,0,0,1],
+        [1,1,0,1,1,0,1,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,0,0,1,1,1],
+        [1,1,0,1,1,0,1,1],
+        [1,1,1,1,1,1,1,1]
+    ]
+    MID = [
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1],
+        [1,0,0,1,1,0,0,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,0,0,0,0,1,1],
+        [1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1]
+    ]
+    LOADING = [
+        [
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,0,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1]
+        ],
+        [
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,0,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1]
+        ],
+        [
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,0,1,1,1],
+            [1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1]
+        ]
+    ]
+
+
+class Matrix():
+    def __init__(self, orientation = 0, rotation = 3, contrast = 20 ) -> None:
+        self.serial = spi(port=0, device=1, gpio=noop())
+        self.device = max7219(
+            self.serial,
+            cascaded=1,
+            block_orientation=orientation,
+            rotate=rotation
+        )
+        self.device.contrast(contrast)
+        self._loading_on = False
+        # self._current_status = None
+
+    def show(self, status: Status8x8):
+        self.device.show()
+        self._current_status = status
+        self._control_led_matrix(status.value)
+
+    def stop(self):
+        self.device.hide()
+        self.device.cleanup()
+    
+    def loading(self, on: bool):
+        if not on:
+            self._loading_on = False
+            return
+        self._loading_on = True
+        t = threading.Thread(target=self._laoding_thread, args=[Status8x8.LOADING])
+        t.start()
+
+    def _laoding_thread(self, status: Status8x8):
+        while self._loading_on:
+            for screen in status.value:
+                if not self._loading_on: return
+                self._control_led_matrix(screen)
+                time.sleep(1)
+
+    def _control_led_matrix(self, status: list):
+        with canvas(self.device, dither = True) as draw:
+            for y, x_row in enumerate(status):
+                for x, bit in enumerate(x_row):
+                    if bit == 0:
+                        draw.point((x, y), fill='white')

@@ -4,9 +4,9 @@ import dht11
 import time
 
 
-class sensor:
+class DHT11:
     """
-    sensor class defining dht11 sensor
+    DHT11 class defining DHT11 sensor
     and holding current values
     """
     def __init__(self, pin: int = 4):
@@ -17,7 +17,7 @@ class sensor:
 
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.cleanup()
+        # GPIO.cleanup()
 
     def update(self, timeout: int = 2) -> bool:
         """func for 'pulling'/ updating the current values
@@ -46,3 +46,10 @@ class sensor:
     def temperature(self) -> float:
         """return class holded temperature value"""
         return float(self.temp)
+
+    def stop(self) -> bool:
+        try:
+            GPIO.cleanup()
+        except Exception as exc:
+            print(exc)
+            return False
