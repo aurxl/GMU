@@ -35,7 +35,8 @@ class Lcd():
                 self.lcd.backlight = False
             return True, None
         except Exception as exc:
-            return False, exc
+            print exc
+            return False
 
     def msg(self, text: str = "hello world", cursor: bool = False) -> (bool, Exception):
         """func for showing messages on the lcd display"""
@@ -46,7 +47,8 @@ class Lcd():
             self.lcd.message = self.text
             return True, None
         except Exception as exc:
-            return False, exc
+            print exc
+            return False
 
     def scroll(self, text: str = "", speed: float = 0.5) -> (bool, Exception):
         """TODO: func for scrolling text at the lcd display"""
@@ -64,8 +66,9 @@ class Lcd():
                 time.sleep(speed)
                 self.lcd.move_left()
             return True, None
-        except Exception:
-            return False, Exception
+        except Exception as exc:
+            print(exc)
+            return False
 
     def stop(self) -> (bool, Exception):
         """clearing screen and turning backlight off"""
@@ -94,7 +97,7 @@ class Segment():
         When there are dots to be printed, some magic is required.
         Dots are at the same position as the number. To display e.g.
         '20.5' which are 4 characters, only 3 numbers from the 4 available
-        places at the display are needed. The dot has to be at the
+        places of the display are needed. The dot has to be at the
         same position as '0', at index 1. Therefor '5' can move one
         index before to 2. The colon is controlled individually btw.
 
@@ -115,9 +118,11 @@ class Segment():
                     self.segment[ii] = c
                 written_chars += c
                 self.segment.show()
+
             except Exception as exc:
                 print(exc)
                 return written_chars, False
+
         return written_chars, True
 
     def stop(self) -> bool:
@@ -125,12 +130,31 @@ class Segment():
         try:
             self.segment.fill(0)
             return True
-        except Exception:
+        except Exception as exc:
+            print(exc)
             return False
 
 
 @unique
 class Status8x8(Enum):
+    """Defining some status icons.
+
+    This unique class holds some pre defined emotes
+    in a special 8x8 matrix. With this strucure we
+    easily define and change the image we want to show
+    at the matrix connected to the pi.
+
+    This form is completely self developed and follows
+    no well known bitmaps standards.
+
+    GOOD, MID and BAD are shown at 8x8 matrix.
+
+    Now, here a some unused emotes. We keep them 
+    nevertheless, mabybe we can use some in future.
+
+    Btw. it really was a challenge to build meaningful
+    faces.
+    """
     SMILEYGOOD = [
         [1,1,0,0,0,0,1,1],
         [1,0,1,1,1,1,0,1],
@@ -257,6 +281,7 @@ class Status8x8(Enum):
 
 class Matrix():
     def __init__(self, orientation = 0, rotation = 3, contrast = 20 ) -> None:
+        # define our serial interface and device
         self.serial = spi(port=0, device=1, gpio=noop())
         self.device = max7219(
             self.serial,
@@ -264,28 +289,53 @@ class Matrix():
             block_orientation=orientation,
             rotate=rotation
         )
+
+        # setting contrast
         self.device.contrast(contrast)
+
+        # object holding if matrix should display loading animation
         self._loading_on = False
-        # self._current_status = None
 
     def show(self, status: Status8x8):
+        """
+        Preparing our matrix device
+        and calling our func to display the given status.
+        """
         self.device.show()
-        self._current_status = status
         self._control_led_matrix(status.value)
 
     def stop(self):
+        """
+        Setting device in low power mode
+        and clear all leds.
+        """
         self.device.hide()
         self.device.cleanup()
     
     def loading(self, on: bool):
+        """
+        Telling object that status of loading animation (on/off)
+        and starting a thread to call our real animation handler.
+
+        Starting a thread allows the loading animation to run
+        in background and not to interrupt our main code.
+        """
         if not on:
             self._loading_on = False
             return
         self._loading_on = True
-        t = threading.Thread(target=self._laoding_thread, args=[Status8x8.LOADING])
+        t = threading.Thread(target=self._loading_thread, args=[Status8x8.LOADING])
         t.start()
 
-    def _laoding_thread(self, status: Status8x8):
+    def _loading_thread(self, status: Status8x8):
+        """
+        This func handles our loading animation while the object
+        attr _loading_on is True.
+
+        It simply takes the Status8x8.LOADING definition and
+        calls for every "image" in that in an one second intervall
+        our func for showing the "images".
+        """
         while self._loading_on:
             for screen in status.value:
                 if not self._loading_on: return
@@ -293,8 +343,18 @@ class Matrix():
                 time.sleep(1)
 
     def _control_led_matrix(self, status: list):
+        """
+        Controlling the leds at the matrix.
+        
+        This requires us to have a canvas to draw at. Luckily the
+        luma.core module provides a PIL.ImageDraw object.
+
+        We simply iterate through the matrix defined by our Status8x8
+        and turn the led on when a 0 is at xy position.
+        """
         with canvas(self.device, dither = True) as draw:
             for y, x_row in enumerate(status):
                 for x, bit in enumerate(x_row):
                     if bit == 0:
                         draw.point((x, y), fill='white')
+

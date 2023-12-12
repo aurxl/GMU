@@ -1,5 +1,5 @@
 #!/bin/env python
-from sensors import DHT11
+from sensors import DHT11, BH1750
 from output import Lcd, Segment, Matrix, Status8x8
 import argparse
 import time
@@ -10,6 +10,8 @@ DESCRIPTION = ""
 EXAMPLE = "gmu.py --hum --temp --lcd --segment -u 2 -l"
 PROG = "python3 gwh.py"
 
+LX_GOOD = 7000
+LX_MID = 4000
 
 class SignalHandler:
     """custom signal handler
@@ -52,9 +54,9 @@ def parse_args():
     parser.add_argument('-s', '--segment', help="output to the 7-Segment Display", dest='SEGMENT', action='store_true')
     parser.add_argument('-H', '--hum', help="check hum level", dest='HUM', action='store_true')
     parser.add_argument('-t', '--temp', help="check temp level", dest='TEMP', action='store_true')
+    parser.add_argument('-li', '--light', help="light level in lx", dest='LIGHT', action='store_true')
     parser.add_argument('-u', '--update-time', help="time in seconds between each update", dest='UPDATETIME')
     parser.add_argument('-S', '--service-mode', help="when starting this program as systemd service to handle SIGTERM", dest='SERVICEMODE', action='store_true')
-    #parser.add_argument('-', '--', help="", dest='', action='store_true')
     return parser.parse_args()
 
 
@@ -67,28 +69,53 @@ def stop(lcd, segment, env_sensor, matrix):
     exit(0)
 
 
-def main(env_sensor = False, lcd = False, segment = False, matrix=False, hum = False, temp = False) -> None:
+def main(env_sensor = False, light_sensor = False, lcd = False, segment = False, matrix=False, hum = False, temp = False) -> None:
     """main func merging all the parts together"""
     hum_str = ""
     temp_str = ""
     line_break = ""
+    light = 0
 
     try:
+        # gather data when option is defined
         if env_sensor: env_sensor.update(5)
+        if light_sensor: light = light_sensor.read()
+
+        # preparing strings to be shown on lcd
         if hum: hum_str = f"Hum :{env_sensor.humidity()}%"
         if temp: temp_str = f"Temp:{env_sensor.temperature()}C"
         if hum and temp: line_break = "\n"
+        
+        # setting faces on matrix based on light level
+        if matrix:
+            if light > 0:
+                matrix.loading(on=False)
+                if light >= LX_GOOD:
+                    matrix.show(Status8x8.GOOD)
+                elif light >= LX_MID:
+                    matrix.show(Status8x8.MID)
+                else:
+                    matrix.show(Status8x8.BAD)
+            else:
+                matrix.loading(on=True)
 
-        if lcd: lcd.msg(f"{hum_str}{line_break}{temp_str}")
-        if segment:
-            if hum and segment.shown_type != "hum":
-                segment.show(f"{env_sensor.humidity()}")
-                segment.shown_type = "hum"
-                matrix.show(Status8x8.GOOD)
-            elif temp and segment.shown_type != "temp":
-                segment.show(f"{env_sensor.temperature()}")
-                segment.shown_type = "temp"
-                matrix.show(Status8x8.BAD)
+        # show loading on matrix while values arent valid
+        if hum == 0 and temp == 0:
+            matrix.loading(on=True)
+        else:
+            matrix.loading(on=False)
+
+            # building string and show on lcd
+            if lcd: lcd.msg(f"{hum_str}{line_break}{temp_str}")
+            if segment:
+                # check currently shown value type at segment display
+                # and switch to that other type to display
+                if hum and segment.shown_type != "hum":
+                    segment.show(f"{env_sensor.humidity()P}")
+                    segment.shown_type = "hum"
+                elif temp and segment.shown_type != "temp":
+                    segment.show(f"{env_sensor.temperature()T}")
+                    segment.shown_type = "temp"
 
     except KeyboardInterrupt:
         # stop program nicely when Keyboard interrupts (^C)
@@ -99,15 +126,17 @@ if __name__ == "__main__":
     # init args
     args = parse_args()
 
-    # define some default vars
+    # define some default vars that
+    # will may be overitten by args
     iterations = 1
-    update_time = 1
+    update_time = 2
     lcd = False
     segment = False
     env_sensor = False
     matrix = False
 
-    # checking user args and setting options
+    # checking user args and
+    # init objects based on them
 
     if args.LCD:
         # initialize lcd output
@@ -119,9 +148,6 @@ if __name__ == "__main__":
 
     if args.MATRIX:
         matrix = Matrix()
-        matrix.loading(on=True)
-        time.sleep(5)
-        matrix.loading(on=False)
 
     if args.ITER:
         iterations = int(args.ITER)
@@ -129,6 +155,9 @@ if __name__ == "__main__":
     if args.HUM or args.TEMP:
         # initialize sensor class
         env_sensor = DHT11(pin=4)
+    
+    if args.LIGHT:
+        light_sensor = BH1750()
     
     if args.SERVICEMODE:
         # init our signal handler
@@ -146,11 +175,11 @@ if __name__ == "__main__":
         print("starting GMU!")
         if args.LOOP:
             while True:
-                main(env_sensor=env_sensor, lcd=lcd, segment=segment, matrix=matrix, hum=args.HUM, temp=args.TEMP)
+                main(env_sensor=env_sensor, light_sensor=light_sensor, lcd=lcd, segment=segment, matrix=matrix, hum=args.HUM, temp=args.TEMP)
                 time.sleep(update_time)
         else:
             for _ in range(iterations):
-                main(env_sensor=env_sensor, lcd=lcd, segment=segment, matrix=matrix, hum=args.HUM, temp=args.TEMP)
+                main(env_sensor=env_sensor, light_sensor=light_sensor, lcd=lcd, segment=segment, matrix=matrix, hum=args.HUM, temp=args.TEMP)
                 time.sleep(update_time)
 
     except KeyboardInterrupt:
@@ -158,4 +187,5 @@ if __name__ == "__main__":
         print("Keyboard  Interrupt ... trying to stop ")
         stop(lcd, segment, env_sensor, matrix)
 
-    stop(lcd, segment, env_sensor, matrix)
+    stop(lcd, segment, env_sensor, matrix)i
+
