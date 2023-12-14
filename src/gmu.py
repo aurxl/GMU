@@ -6,8 +6,8 @@ import time
 import signal
 
 
-DESCRIPTION = ""
-EXAMPLE = "gmu.py --hum --temp --lcd --segment -u 2 -l"
+DESCRIPTION = "Greenhouse Monitoring Utilty v1.2"
+EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light -u 4"
 PROG = "python3 gwh.py"
 
 LX_GOOD = 7000
@@ -15,7 +15,7 @@ LX_MID = 4000
 
 class SignalHandler:
     """custom signal handler
-    
+
     Especially when gmu is running as a systemd service,
     handling signals come in handy. When you want to
     manually stop the service eg. with `systemctl stop gmu`
@@ -85,7 +85,7 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
         if hum: hum_str = f"Hum :{env_sensor.humidity()}%"
         if temp: temp_str = f"Temp:{env_sensor.temperature()}C"
         if hum and temp: line_break = "\n"
-        
+
         # setting faces on matrix based on light level
         if matrix:
             if light > 0:
@@ -111,10 +111,10 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
                 # check currently shown value type at segment display
                 # and switch to that other type to display
                 if hum and segment.shown_type != "hum":
-                    segment.show(f"{env_sensor.humidity()P}")
+                    segment.show(f"{env_sensor.humidity()}P")
                     segment.shown_type = "hum"
                 elif temp and segment.shown_type != "temp":
-                    segment.show(f"{env_sensor.temperature()T}")
+                    segment.show(f"{env_sensor.temperature()}C")
                     segment.shown_type = "temp"
 
     except KeyboardInterrupt:
@@ -123,7 +123,7 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
 
 
 if __name__ == "__main__":
-    # init args
+    # init args / read args
     args = parse_args()
 
     # define some default vars that
@@ -187,5 +187,4 @@ if __name__ == "__main__":
         print("Keyboard  Interrupt ... trying to stop ")
         stop(lcd, segment, env_sensor, matrix)
 
-    stop(lcd, segment, env_sensor, matrix)i
-
+    stop(lcd, segment, env_sensor, matrix)
