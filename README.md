@@ -1,5 +1,6 @@
 # LF7 Cyberphysiche Systeme ergänzen - Projekt Gewächshaussteuerung
 
+**Bei Fragen zur Bedienung bitte unter docs/Bedienungsanleitung nachsehen**
 
 ## 1 Projektbeschreibung
 ```

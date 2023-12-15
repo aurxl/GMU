@@ -47,7 +47,7 @@ class Lcd():
             self.lcd.message = self.text
             return True, None
         except Exception as exc:
-            print exc
+            print(exc)
             return False
 
     def scroll(self, text: str = "", speed: float = 0.5) -> (bool, Exception):
@@ -91,7 +91,7 @@ class Segment():
         
         self.segment.fill(0)
 
-    def show(self, chars: str = "0000", colon: bool = False) -> (str, bool):
+    def show(self, chars: str = "0000") -> (str, bool):
         """showing given string on display
 
         When there are dots to be printed, some magic is required.

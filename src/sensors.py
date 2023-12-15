@@ -4,6 +4,7 @@ import dht11
 import time
 import smbus 
 
+
 class DHT11:
     """
     DHT11 class defining DHT11 sensor
@@ -35,15 +36,15 @@ class DHT11:
             if result.is_valid():
                 break
             else:
-                return False
+                # return False
+                continue
 
         # Only set object values when hum seems reasonable
         # this allows us to set a "loading" screen for the
         # very first iterations when sensor is returning 0.
-        if result.humidity < 0:
-            self.temp = result.temperature
-            self.hum = result.humidity
-        return True
+#        if result.humidity < 0:
+#            self.temp = result.temperature
+#            self.hum = result.humidity
 
     def humidity(self) -> float:
         """return class holded humidity value"""
@@ -55,7 +56,7 @@ class DHT11:
 
     def stop(self) -> bool:
         try:
-            GPIO.cleanup()
+            self.GPIO.cleanup()
         except Exception as exc:
             print(exc)
             return False
