@@ -21,30 +21,23 @@ class DHT11:
 
     def update(self, timeout: int = 2) -> bool:
         """func for 'pulling'/ updating the current values
-        
+
         Timeout defines the max time in sec. to wait for
         valid values from the dht11 sensor.
         """
         result = self.instance.read()
         timeout = time.time() + timeout
 
-        # While the dht11 module isnt reurning a valid result
-        # and our specified timeiut isnt reached, try to gather
-        # sensor data.
         while not result.is_valid() and time.time() < timeout:
             result = self.instance.read()
             if result.is_valid():
                 break
             else:
-                # return False
-                continue
+                return False
 
-        # Only set object values when hum seems reasonable
-        # this allows us to set a "loading" screen for the
-        # very first iterations when sensor is returning 0.
-#        if result.humidity < 0:
-#            self.temp = result.temperature
-#            self.hum = result.humidity
+        self.temp = result.temperature
+        self.hum = result.humidity
+        return True
 
     def humidity(self) -> float:
         """return class holded humidity value"""

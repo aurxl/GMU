@@ -1,6 +1,6 @@
 #!/bin/env python
-#from sensors import DHT11, BH1750
-#from output import Lcd, Segment, Matrix, Status8x8
+from sensors import DHT11, BH1750
+from output import Lcd, Segment, Matrix, Status8x8
 import argparse
 import time
 import signal
@@ -12,6 +12,7 @@ PROG = "python3 gwh.py"
 
 LX_GOOD = 7000
 LX_MID = 4000
+
 
 class SignalHandler:
     """custom signal handler
@@ -80,7 +81,7 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
         # gather data when option is defined
         if env_sensor: env_sensor.update(5)
         if light_sensor: light = light_sensor.read()
-
+        
         # preparing strings to be shown on lcd
         if hum: hum_str = f"Hum :{env_sensor.humidity()}%"
         if temp: temp_str = f"Temp:{env_sensor.temperature()}C"
@@ -100,22 +101,22 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
                 matrix.loading(on=True)
 
         # show loading on matrix while values arent valid
-        if hum == 0 and temp == 0:
+        if (hum == 0 and temp == 0) and matrix:
             matrix.loading(on=True)
-        else:
+        elif matrix:
             matrix.loading(on=False)
 
-            # building string and show on lcd
-            if lcd: lcd.msg(f"{hum_str}{line_break}{temp_str}")
-            if segment:
-                # check currently shown value type at segment display
-                # and switch to that other type to display
-                if hum and segment.shown_type != "hum":
-                    segment.show(f"{env_sensor.humidity()}P")
-                    segment.shown_type = "hum"
-                elif temp and segment.shown_type != "temp":
-                    segment.show(f"{env_sensor.temperature()}C")
-                    segment.shown_type = "temp"
+        # building string and show on lcd
+        if lcd: lcd.msg(f"{hum_str}{line_break}{temp_str}")
+        if segment:
+            # check currently shown value type at segment display
+            # and switch to that other type to display
+            if hum and segment.shown_type != "hum":
+                segment.show(f"{env_sensor.humidity()}P")
+                segment.shown_type = "hum"
+            elif temp and segment.shown_type != "temp":
+                segment.show(f"{env_sensor.temperature()}C")
+                segment.shown_type = "temp"
 
     except KeyboardInterrupt:
         # stop program nicely when Keyboard interrupts (^C)
@@ -133,6 +134,7 @@ if __name__ == "__main__":
     lcd = False
     segment = False
     env_sensor = False
+    light_sensor = False
     matrix = False
 
     # checking user args and

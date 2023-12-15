@@ -35,7 +35,7 @@ class Lcd():
                 self.lcd.backlight = False
             return True, None
         except Exception as exc:
-            print exc
+            print(exc)
             return False
 
     def msg(self, text: str = "hello world", cursor: bool = False) -> (bool, Exception):
