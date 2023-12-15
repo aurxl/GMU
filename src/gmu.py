@@ -1,12 +1,12 @@
 #!/bin/env python
-from sensors import DHT11, BH1750
-from output import Lcd, Segment, Matrix, Status8x8
+#from sensors import DHT11, BH1750
+#from output import Lcd, Segment, Matrix, Status8x8
 import argparse
 import time
 import signal
 
 
-DESCRIPTION = "Greenhouse Monitoring Utilty v1.2"
+DESCRIPTION = "Greenhouse Monitoring Utilty v1.5"
 EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light -u 4"
 PROG = "python3 gwh.py"
 
