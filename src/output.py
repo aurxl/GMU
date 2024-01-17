@@ -35,7 +35,7 @@ class Lcd():
                 self.lcd.backlight = False
             return True, None
         except Exception as exc:
-            print exc
+            print(exc)
             return False
 
     def msg(self, text: str = "hello world", cursor: bool = False) -> (bool, Exception):
@@ -357,4 +357,3 @@ class Matrix():
                 for x, bit in enumerate(x_row):
                     if bit == 0:
                         draw.point((x, y), fill='white')
-

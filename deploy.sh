@@ -1,7 +1,7 @@
 set -e
 set -o pipefail
 
-SSHHOST="raspberrypi"
+SSHHOST="10.1.231.95"
 SSHUSER="pi"
 PASSWORD=""
 
