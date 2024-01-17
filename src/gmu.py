@@ -13,7 +13,6 @@ PROG = "python3 gwh.py"
 LX_GOOD = 7000
 LX_MID = 4000
 
-
 class SignalHandler:
     """custom signal handler
 
@@ -81,7 +80,7 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
         # gather data when option is defined
         if env_sensor: env_sensor.update(5)
         if light_sensor: light = light_sensor.read()
-        
+
         # preparing strings to be shown on lcd
         if hum: hum_str = f"Hum :{env_sensor.humidity()}%"
         if temp: temp_str = f"Temp:{env_sensor.temperature()}C"
@@ -101,7 +100,7 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
                 matrix.loading(on=True)
 
         # show loading on matrix while values arent valid
-        if (hum == 0 and temp == 0) and matrix:
+        if ((hum == 0 and temp == 0) and matrix) and matrix:
             matrix.loading(on=True)
         elif matrix:
             matrix.loading(on=False)
@@ -112,10 +111,10 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
             # check currently shown value type at segment display
             # and switch to that other type to display
             if hum and segment.shown_type != "hum":
-                segment.show(f"{round(env_sensor.humidity(),0)}P")
+                segment.show(f"{env_sensor.humidity()}P")
                 segment.shown_type = "hum"
             elif temp and segment.shown_type != "temp":
-                segment.show(f"{round(env_sensor.temperature(),0)}C")
+                segment.show(f"{env_sensor.temperature()}C")
                 segment.shown_type = "temp"
 
     except KeyboardInterrupt:
