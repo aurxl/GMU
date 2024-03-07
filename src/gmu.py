@@ -10,8 +10,10 @@ DESCRIPTION = "Greenhouse Monitoring Utilty v1.5"
 EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light -u 4"
 PROG = "python3 gwh.py"
 
-LX_GOOD = 7000
-LX_MID = 4000
+# those are just some low values for showcase
+LX_MAX = 12000
+LX_MID = 7000
+LX_MIN = 4000
 
 class SignalHandler:
     """custom signal handler
@@ -90,9 +92,9 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
         if matrix:
             if light > 0:
                 matrix.loading(on=False)
-                if light >= LX_GOOD:
+                if LX_MID <= light <= LX_MAX:
                     matrix.show(Status8x8.GOOD)
-                elif light >= LX_MID:
+                elif LX_MIN <= light <= LX_MID:
                     matrix.show(Status8x8.MID)
                 else:
                     matrix.show(Status8x8.BAD)
