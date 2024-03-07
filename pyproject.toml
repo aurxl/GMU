@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "gmu"
+version = "1.5"
+description = "Greenhouse Monitoring Utility"
+authors = ["Jan Meineke <jan.meineke@mailbox.org>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "~3.9"
+dht11 = "^0.1.0"
+smbus = "^1.1.post2"
+board = "^1.0"
+adafruit-circuitpython-ht16k33 = "^4.6.7"
+"luma.core" = "^2.4.2"
+"luma.led-matrix" = "^1.7.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
