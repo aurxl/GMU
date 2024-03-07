@@ -82,8 +82,8 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
         if light_sensor: light = light_sensor.read()
 
         # preparing strings to be shown on lcd
-        if hum: hum_str = f"Hum :{env_sensor.humidity()}%"
-        if temp: temp_str = f"Temp:{env_sensor.temperature()}C"
+        if hum: hum_str = f"Hum :{int(env_sensor.humidity())}%"
+        if temp: temp_str = f"Temp:{int(env_sensor.temperature())}C"
         if hum and temp: line_break = "\n"
 
         # setting faces on matrix based on light level
@@ -111,10 +111,10 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
             # check currently shown value type at segment display
             # and switch to that other type to display
             if hum and segment.shown_type != "hum":
-                segment.show(f"{env_sensor.humidity()}P")
+                segment.show(f"{int(env_sensor.humidity())}F")
                 segment.shown_type = "hum"
             elif temp and segment.shown_type != "temp":
-                segment.show(f"{env_sensor.temperature()}C")
+                segment.show(f"{int(env_sensor.temperature())}C")
                 segment.shown_type = "temp"
 
     except KeyboardInterrupt:

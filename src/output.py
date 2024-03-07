@@ -357,3 +357,4 @@ class Matrix():
                 for x, bit in enumerate(x_row):
                     if bit == 0:
                         draw.point((x, y), fill='white')
+

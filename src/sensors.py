@@ -54,6 +54,7 @@ class DHT11:
             print(exc)
             return False
 
+
 class BH1750():
     """class defining the bh1750 light sensor
 
