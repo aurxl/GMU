@@ -1,19 +1,24 @@
 #!/bin/env python
 from sensors import DHT11, BH1750
-from output import Lcd, Segment, Matrix, Status8x8
+from output import Lcd, Segment, Matrix, Status8x8, Relay
+import datetime 
 import argparse
 import time
 import signal
 
 
-DESCRIPTION = "Greenhouse Monitoring Utilty v1.5"
-EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light -u 4"
+DESCRIPTION = "Greenhouse Monitoring Utilty v1.6"
+EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light --relay -u 4"
 PROG = "python3 gwh.py"
 
 # those are just some low values for showcase
 LX_MAX = 12000
 LX_MID = 7000
 LX_MIN = 4000
+
+# times in wich the light house should be illuminated
+DAY_START = datetime.time(hour=6)
+DAY_END = datetime.time(hour=22)
 
 class SignalHandler:
     """custom signal handler
@@ -59,6 +64,7 @@ def parse_args():
     parser.add_argument('-li', '--light', help="light level in lx", dest='LIGHT', action='store_true')
     parser.add_argument('-u', '--update-time', help="time in seconds between each update", dest='UPDATETIME')
     parser.add_argument('-S', '--service-mode', help="when starting this program as systemd service to handle SIGTERM", dest='SERVICEMODE', action='store_true')
+    parser.add_argument('-r', '--relay', help="Controling the relay based on current time and light level", dest='RELAY', action='store_true')
     return parser.parse_args()
 
 
@@ -71,18 +77,35 @@ def stop(lcd, segment, env_sensor, matrix):
     exit(0)
 
 
-def main(env_sensor = False, light_sensor = False, lcd = False, segment = False, matrix=False, hum = False, temp = False) -> None:
+def main(
+            env_sensor = False,
+            light_sensor = False,
+            lcd = False,
+            segment = False,
+            matrix=False,
+            relay=False,
+            hum = False,
+            temp = False
+        ) -> None:
     """main func merging all the parts together"""
     hum_str = ""
     temp_str = ""
     line_break = ""
     light = 0
+    light_status = None
 
     try:
         # gather data when option is defined
         if env_sensor: env_sensor.update(5)
-        if light_sensor: light = light_sensor.read()
-
+        if light_sensor:
+            light = light_sensor.read()
+            if LX_MID <= light <= LX_MAX:
+                light_status = Status8x8.GOOD
+            elif LX_MIN <= light <= LX_MID:
+                light_status = Status8x8.MID
+            else:
+                light_status = Status8x8.BAD
+            
         # preparing strings to be shown on lcd
         if hum: hum_str = f"Hum :{int(env_sensor.humidity())}%"
         if temp: temp_str = f"Temp:{int(env_sensor.temperature())}C"
@@ -92,12 +115,7 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
         if matrix:
             if light > 0:
                 matrix.loading(on=False)
-                if LX_MID <= light <= LX_MAX:
-                    matrix.show(Status8x8.GOOD)
-                elif LX_MIN <= light <= LX_MID:
-                    matrix.show(Status8x8.MID)
-                else:
-                    matrix.show(Status8x8.BAD)
+                matrix.show(status = light_status)
             else:
                 matrix.loading(on=True)
 
@@ -118,6 +136,15 @@ def main(env_sensor = False, light_sensor = False, lcd = False, segment = False,
             elif temp and segment.shown_type != "temp":
                 segment.show(f"{int(env_sensor.temperature())}C")
                 segment.shown_type = "temp"
+        
+        # Open Relay based in current light level and datetime
+        if relay:
+            curr_hour = datetime.time().hour()
+            if (DAY_START < curr_hour < DAY_END) and light_sensor == Status8x8.BAD:
+                relay.open()
+            else:
+                relay.close()
+
 
     except KeyboardInterrupt:
         # stop program nicely when Keyboard interrupts (^C)
@@ -137,6 +164,7 @@ if __name__ == "__main__":
     env_sensor = False
     light_sensor = False
     matrix = False
+    relay = False
 
     # checking user args and
     # init objects based on them
@@ -169,6 +197,10 @@ if __name__ == "__main__":
     if args.UPDATETIME:
         update_time = float(args.UPDATETIME)
 
+    if args.RELAY:
+        relay = Relay()
+
+
     try:
         """
         when user wants to run the program forever (--loop)
@@ -178,11 +210,26 @@ if __name__ == "__main__":
         print("starting GMU!")
         if args.LOOP:
             while True:
-                main(env_sensor=env_sensor, light_sensor=light_sensor, lcd=lcd, segment=segment, matrix=matrix, hum=args.HUM, temp=args.TEMP)
+                main(
+                        env_sensor=env_sensor,
+                        light_sensor=light_sensor,
+                        lcd=lcd, segment=segment,
+                        matrix=matrix,
+                        hum=args.HUM,
+                        temp=args.TEMP
+                    )
                 time.sleep(update_time)
         else:
             for _ in range(iterations):
-                main(env_sensor=env_sensor, light_sensor=light_sensor, lcd=lcd, segment=segment, matrix=matrix, hum=args.HUM, temp=args.TEMP)
+                main(
+                        env_sensor=env_sensor,
+                        light_sensor=light_sensor,
+                        lcd=lcd, segment=segment,
+                        matrix=matrix,
+
+                        hum=args.HUM,
+                        temp=args.TEMP
+                    )
                 time.sleep(update_time)
 
     except KeyboardInterrupt:

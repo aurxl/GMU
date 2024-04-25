@@ -63,6 +63,8 @@ ren.
 > 9.+ 11. Woche
 - Lichtsteuerung mit Relais
     - unter Berücksichtigung aktueller (Tages-)Zeit
+        - Pflanze benötigt 16h Licht
+            - heißt, zwischen 6:00 und 22:00 muss, wenn der Helligkeitssensor seinen Grenzwert erreicht das Relais umschalten.
     - Zeit mit Zeitserver (10.254.5.115) syncen
         - Einstellungen auf Raspi überprüfen:
             ``` sh

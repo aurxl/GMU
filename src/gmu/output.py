@@ -4,11 +4,13 @@ import threading
 from enum import unique, Enum
 import board
 import busio
+import RPi.GPIO as GPIO
 import adafruit_character_lcd.character_lcd_i2c as c_lcd
 from adafruit_ht16k33.segments import Seg7x4
 from luma.led_matrix.device import max7219
 from luma.core.interface.serial import spi, noop
 from luma.core.render import canvas
+
 
 class Lcd():
     """class defining the lcd display"""
@@ -358,3 +360,27 @@ class Matrix():
                     if bit == 0:
                         draw.point((x, y), fill='white')
 
+
+class Relay:
+    PIN = 40
+
+    def __init__(self):
+        GPIO.setmode(GPIO.BOARD)
+        GPIO.setup(self.PIN, GPIO.OUT)
+    
+    def __del__(self):
+        GPIO.cleanup()
+
+    def open(self) -> (bool, Exception):
+        try:
+            GPIO.output(self.PIN, GPIO.LOW)
+            return True
+        except Exception as exc:
+            raise Exception(f"Failed open Relay: {exc}") from exc
+    
+    def close(self) -> (bool, Exception):
+        try:
+            GPIO.output(self.PIN, GPIO.HIGH)
+            return True
+        except Exception as exc:
+            raise Exception(f"Failed open Relay: {exc}") from exc
