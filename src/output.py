@@ -362,10 +362,11 @@ class Matrix():
 
 
 class Relay:
-    PIN = 40
+    # GPIO BCM PIN
+    PIN = 21
 
     def __init__(self):
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.PIN, GPIO.OUT)
     
     def __del__(self):

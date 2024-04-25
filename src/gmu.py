@@ -136,13 +136,15 @@ def main(
             elif temp and segment.shown_type != "temp":
                 segment.show(f"{int(env_sensor.temperature())}C")
                 segment.shown_type = "temp"
-        
+
         # Open Relay based in current light level and datetime
         if relay:
-            curr_hour = datetime.time().hour()
-            if (DAY_START < curr_hour < DAY_END) and light_sensor == Status8x8.BAD:
+            curr_hour = datetime.datetime.now().hour
+            if (DAY_START.hour < curr_hour < DAY_END.hour) and light_status == Status8x8.BAD:
+                print("open relay")
                 relay.open()
             else:
+                print("close relay")
                 relay.close()
 
 
@@ -215,6 +217,7 @@ if __name__ == "__main__":
                         light_sensor=light_sensor,
                         lcd=lcd, segment=segment,
                         matrix=matrix,
+                        relay=relay,
                         hum=args.HUM,
                         temp=args.TEMP
                     )
@@ -226,7 +229,7 @@ if __name__ == "__main__":
                         light_sensor=light_sensor,
                         lcd=lcd, segment=segment,
                         matrix=matrix,
-
+                        relay=relay,
                         hum=args.HUM,
                         temp=args.TEMP
                     )
