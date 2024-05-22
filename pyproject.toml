@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gmu"
-version = "1.5"
+version = "1.6"
 description = "Greenhouse Monitoring Utility"
 authors = ["Jan Meineke <jan.meineke@mailbox.org>"]
 license = "MIT"

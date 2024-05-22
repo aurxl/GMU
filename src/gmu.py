@@ -4,21 +4,26 @@ from output import Lcd, Segment, Matrix, Status8x8, Relay
 import datetime 
 import argparse
 import time
+import os.path
 import signal
+import csv as csv_lib
 
 
 DESCRIPTION = "Greenhouse Monitoring Utilty v1.6"
-EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light --relay -u 4"
+EXAMPLE = "gmu.py --loop --segment --lcd --matrix --hum --temp --light --relay --csv -u 4"
 PROG = "python3 gwh.py"
 
-# those are just some low values for showcase
+# Those are just some low values for showcase
 LX_MAX = 12000
 LX_MID = 7000
 LX_MIN = 4000
 
-# times in wich the light house should be illuminated
+# Times in wich the light house should be illuminated
 DAY_START = datetime.time(hour=6)
 DAY_END = datetime.time(hour=22)
+
+# Name of the CSV File
+CSV_FILE_NAME = "gmu.csv"
 
 class SignalHandler:
     """custom signal handler
@@ -65,6 +70,8 @@ def parse_args():
     parser.add_argument('-u', '--update-time', help="time in seconds between each update", dest='UPDATETIME')
     parser.add_argument('-S', '--service-mode', help="when starting this program as systemd service to handle SIGTERM", dest='SERVICEMODE', action='store_true')
     parser.add_argument('-r', '--relay', help="Controling the relay based on current time and light level", dest='RELAY', action='store_true')
+    parser.add_argument('-c', '--csv', help="Writing gathered info into csv file", dest='CSV', action='store_true')
+
     return parser.parse_args()
 
 
@@ -76,23 +83,56 @@ def stop(lcd, segment, env_sensor, matrix):
     if matrix: matrix.stop()
     exit(0)
 
+def init_csv():
+    """Create the csv if not present and add a header."""
+    if not os.path.isfile(f"./{CSV_FILE_NAME}"):
+        with open("gmu.csv", "w", newline = "") as csvfile:
+            csv_writer = csv_lib.writer(csvfile, delimiter=",", quotechar="|", quoting=csv_lib.QUOTE_MINIMAL)
+            csv_writer.writerow([
+                "time",
+                "temperature (°C)",
+                "humidity (%)",
+                "light (lux)",
+                "light rating",
+                "relay open"
+            ])
+            csv_writer.writerow([])
+
+def write_to_csv(temp: int, hum: int, light: int, light_status: Status8x8, relay: bool):
+    """Append the given values to the csv."""
+    light_status_sanitized = ""
+    with open("gmu.csv", "a", newline = "") as csvfile:
+        csv_writer = csv_lib.writer(csvfile, delimiter=",", quotechar="|", quoting=csv_lib.QUOTE_MINIMAL)
+        
+        if light_status == Status8x8.GOOD:
+            light_status_sanitized = "optimal"
+        elif light_status == Status8x8.MID:
+            light_status_sanitized = "suboptimal"
+        else:
+            light_status_sanitized = "not optimal"
+
+        curr_time = datetime.datetime.now()
+        curr_time = curr_time.strftime("%d-%m-%Y %H:%M:%S")
+        csv_writer.writerow([curr_time, temp, hum, light, light_status_sanitized, relay])
 
 def main(
-            env_sensor = False,
-            light_sensor = False,
-            lcd = False,
-            segment = False,
-            matrix=False,
-            relay=False,
-            hum = False,
-            temp = False
-        ) -> None:
-    """main func merging all the parts together"""
+    env_sensor = False,
+    light_sensor = False,
+    lcd = False,
+    segment = False,
+    matrix=False,
+    relay=False,
+    hum = False,
+    temp = False,
+    csv = False,
+) -> None:
+    """Main func merging all the parts together."""
     hum_str = ""
     temp_str = ""
     line_break = ""
     light = 0
     light_status = None
+    relay_open = False
 
     try:
         # gather data when option is defined
@@ -137,15 +177,25 @@ def main(
                 segment.show(f"{int(env_sensor.temperature())}C")
                 segment.shown_type = "temp"
 
-        # Open Relay based in current light level and datetime
+        # Open Relay based on current light level and datetime
         if relay:
             curr_hour = datetime.datetime.now().hour
             if (DAY_START.hour < curr_hour < DAY_END.hour) and light_status == Status8x8.BAD:
                 print("open relay")
                 relay.open()
+                relay_open = True
             else:
                 print("close relay")
                 relay.close()
+        
+        if csv:
+            write_to_csv(
+                temp = env_sensor.temperature(),
+                hum = env_sensor.humidity(),
+                light = light,
+                light_status = light_status,
+                relay = relay_open
+            )
 
 
     except KeyboardInterrupt:
@@ -167,6 +217,7 @@ if __name__ == "__main__":
     light_sensor = False
     matrix = False
     relay = False
+    csv = False
 
     # checking user args and
     # init objects based on them
@@ -202,37 +253,43 @@ if __name__ == "__main__":
     if args.RELAY:
         relay = Relay()
 
+    if args.CSV:
+        csv = True
+        init_csv()
+
 
     try:
         """
-        when user wants to run the program forever (--loop)
+        When user wants to run the program forever (--loop),
         start while loop otherwise iterate for given (--iteration)
-        number
+        number.
         """
         print("starting GMU!")
         if args.LOOP:
             while True:
                 main(
-                        env_sensor=env_sensor,
-                        light_sensor=light_sensor,
-                        lcd=lcd, segment=segment,
-                        matrix=matrix,
-                        relay=relay,
-                        hum=args.HUM,
-                        temp=args.TEMP
-                    )
+                    env_sensor=env_sensor,
+                    light_sensor=light_sensor,
+                    lcd=lcd, segment=segment,
+                    matrix=matrix,
+                    relay=relay,
+                    hum=args.HUM,
+                    temp=args.TEMP,
+                    csv=csv
+                )
                 time.sleep(update_time)
         else:
             for _ in range(iterations):
                 main(
-                        env_sensor=env_sensor,
-                        light_sensor=light_sensor,
-                        lcd=lcd, segment=segment,
-                        matrix=matrix,
-                        relay=relay,
-                        hum=args.HUM,
-                        temp=args.TEMP
-                    )
+                    env_sensor=env_sensor,
+                    light_sensor=light_sensor,
+                    lcd=lcd, segment=segment,
+                    matrix=matrix,
+                    relay=relay,
+                    hum=args.HUM,
+                    temp=args.TEMP,
+                    csv=csv
+                )
                 time.sleep(update_time)
 
     except KeyboardInterrupt:
