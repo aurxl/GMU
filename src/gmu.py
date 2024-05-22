@@ -298,3 +298,4 @@ if __name__ == "__main__":
         stop(lcd, segment, env_sensor, matrix)
 
     stop(lcd, segment, env_sensor, matrix)
+

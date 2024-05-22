@@ -1,2 +1,3 @@
 dist/
-src/gmu/__pycache__
+*__pycache_
+*.csv
