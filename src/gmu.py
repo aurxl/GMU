@@ -113,7 +113,7 @@ def write_to_csv(temp: int, hum: int, light: int, light_status: Status8x8, relay
 
         curr_time = datetime.datetime.now()
         curr_time = curr_time.strftime("%d-%m-%Y %H:%M:%S")
-        csv_writer.writerow([curr_time, temp, hum, light, light_status_sanitized, relay])
+        csv_writer.writerow([curr_time, int(temp), hum, int(light), light_status_sanitized, relay])
 
 def main(
     env_sensor = False,
@@ -132,6 +132,7 @@ def main(
     line_break = ""
     light = 0
     light_status = None
+    light_too_high = False
     relay_open = False
 
     try:
@@ -143,6 +144,9 @@ def main(
                 light_status = Status8x8.GOOD
             elif LX_MIN <= light <= LX_MID:
                 light_status = Status8x8.MID
+            elif light > LX_MAX:
+                light_status = Status8x8.BAD
+                light_too_high = True
             else:
                 light_status = Status8x8.BAD
             
@@ -180,7 +184,7 @@ def main(
         # Open Relay based on current light level and datetime
         if relay:
             curr_hour = datetime.datetime.now().hour
-            if (DAY_START.hour < curr_hour < DAY_END.hour) and light_status == Status8x8.BAD:
+            if (DAY_START.hour < curr_hour < DAY_END.hour) and light_status == Status8x8.BAD and not light_too_high:
                 print("open relay")
                 relay.open()
                 relay_open = True
