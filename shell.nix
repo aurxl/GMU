@@ -2,6 +2,7 @@
   pkgs.mkShell {
     nativeBuildInputs = with pkgs; [
       sshpass
+      pandoc
       poetry
       python39
     ];

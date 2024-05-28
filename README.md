@@ -69,7 +69,10 @@ ren.
         - Einstellungen auf Raspi überprüfen:
             ``` sh
             sudo apt install ntp
-            sudo sh -c "echo 'server 10.254.5.115' >> /etc/ntp.conf && systemctl restart ntp.service"
+            sudo sh -c "echo 'server 10.254.5.115' >> /etc/ntp.conf"
+            sudo service ntp stop
+            sudo ntpd -gq
+            sudo service ntp start
             ```
 - Speicherung der Werte (Zeit, Temp, Hum, Licht, Zustand des Relais) in einer CSV- Datei
     - Diese soll mit einem Tabellenkalkulationsprogramm ausgewertet werden können

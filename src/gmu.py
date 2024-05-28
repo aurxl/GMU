@@ -104,7 +104,9 @@ def write_to_csv(temp: int, hum: int, light: int, light_status: Status8x8, relay
     with open("gmu.csv", "a", newline = "") as csvfile:
         csv_writer = csv_lib.writer(csvfile, delimiter=",", quotechar="|", quoting=csv_lib.QUOTE_MINIMAL)
         
-        if light_status == Status8x8.GOOD:
+        if int(light) >= LX_MAX:
+            light_status_sanitized = "too bright"
+        elif light_status == Status8x8.GOOD:
             light_status_sanitized = "optimal"
         elif light_status == Status8x8.MID:
             light_status_sanitized = "suboptimal"
@@ -185,13 +187,12 @@ def main(
         if relay:
             curr_hour = datetime.datetime.now().hour
             if (DAY_START.hour < curr_hour < DAY_END.hour) and light_status == Status8x8.BAD and not light_too_high:
-                print("open relay")
                 relay.open()
                 relay_open = True
             else:
-                print("close relay")
                 relay.close()
         
+        # write gathered values into csv file
         if csv:
             write_to_csv(
                 temp = env_sensor.temperature(),

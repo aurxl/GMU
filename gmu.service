@@ -6,7 +6,7 @@ Type=simple
 User=pi
 Group=pi
 Restart=on-failure
-ExecStart=python3 /opt/gmu/gmu.py -LHtlsm -li -u 4 --service-mode
+ExecStart=python3 /opt/gmu/gmu.py --loop --segment --lcd --matrix --hum --temp --light --csv --relay -u 4 --service-mode
 
 [Install]
 WantedBy=multi-user.target
